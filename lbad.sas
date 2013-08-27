@@ -76,7 +76,10 @@
    run;
 
 
-   %precision(inds= _inds ,outds=_precision,by=lbtestcd,var=lbstresc);
+   %precision(inds= _inds ,
+              outds=_precision,
+              by=lbtestcd,
+              var=lbstresc);
 
    data _labtox02;
       merge _labtox02   (in=in1)
