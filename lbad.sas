@@ -1,60 +1,51 @@
 /*****************************************************************************
- Trial               ..-SYSTEM
- Program ID:         S:\System\Dev\Adam\Macros\Draft Toxgrades.Sas
- Author:             Bjorn Daems   Tibotec Mechelen Ext.4229
- Created:            Oct, 2009
- Description:        LBAD specif macros
-
-
+ Program ID:         AdLabTox
+ Description:        Adds lab toxicity grading
+ Assumption:         - Relies on an Excel file with the grading definitions
+                       for an example see the DAIDS.xls file in the repository.
+                     - Context variables such as sex, fasting or other conditions
+                       have to match in excel file and input data set to allow proper
+                       linkage. (e.g. Glucose ranges under matching conditions)
+                     - relies on %adamvardef, a macro to define the variables with
+                       the right attributes, as defined in the metadata library
+ Uses macros:        %adamvardef, %fdolst, %fvexist
 *****************************************************************************/
 
+%macro labtox(labtoxfile  = ,
+              inds        = ,
+              outds       = );
 
-
-%macro labtox(labtoxfile  = =\\eu.jnj.com\tibbedfsroot\sas\System\prd\ADAM\Templates\
-                     Grading Scale in Hepatitis C Clinical Studies - EDP.xls,
-              inds        = _last_,
-              outds       = _labtox,
-              condition   = 1);
-
-   data _inds;
-    set &inds;
-    &condition;
-   run;
-
-   proc import out= _labtox01
+   /* Read the tox grade definition excel file, to be adapted for compatibility with 64bit Windows */
+   proc import out= _labtox010
              datafile= "&labtoxfile"
              dbms=excel replace;
              getnames=yes;
              mixed=yes;
    run;
 
-
-   data _labtox02;
+   /* Parse the grading definitilon data set */
+   data _labtox020;
      %adamvardef(vars=lbtestcd lbtoxnm);
-     set _labtox01 (where = (not missing (lbtestcd)));
+     set _labtox010 (where = (not missing (lbtestcd)));
      lbtoxnm=strip(lbtoxnm);
-     rename
-     %fdolst(vars    =%fvexist(inds=_labtox01,vars=grade_1 grade_2 grade_3 grade_4),
-             stmt    =%nrstr(&item = _rangeg&itemno));;
+     rename %fdolst(vars    =%fvexist(inds=_labtox010,vars=grade_1 grade_2 grade_3 grade_4),
+                    stmt    =%nrstr(&item = _rangeg&itemno));;
      proc sort;by lbtestcd;
    run;
-
-   *check for necessary variables in input dataset*;
-   proc contents data=_labtox02 (drop = _: LABORATORY_TEST ) noprint out=_labtox09 (keep=name varnum);run;
-   proc contents data=_inds noprint out=_labtox010 (keep=name);run;
-
- *----   * check wether the condition vars are present eg. sex, fasting, hiv ----*;
+   proc contents data=_labtox020 (drop = _: LABORATORY_TEST ) noprint out=_labtox030 (keep=name varnum);run;
+   proc contents data=&inds noprint out=_labtox040 (keep=name);run;
    data _null_;
-    merge _labtox09 (in=tox where=(lowcase(name) not in ('lbtoxnm') ))
-          _labtox010 (in=inds);
-    by name;
-    if tox and not inds then put "WARNING: Variable " name " is missing in the input dataset"
-                                 /"=> " name " is a conditional variable for the toxicity scaling";
+     merge _labtox030 (in=tox where=(lowcase(name) not in ('lbtoxnm') ))
+           _labtox040 (in=inds);
+     by name;
+     if tox and not inds 
+      then put "USER WARNING: Variable " name " is missing in the input dataset &inds, "
+                                  /"=> " name " is a conditional/context variable for the toxicity scaling";
    run;
 
    proc sql noprint;
       create table _labtox03 as
-      select distinct lbtestcd as toxlbtestcd,upcase(lbstresu) as toxunit  from _labtox02
+      select distinct lbtestcd as toxlbtestcd,upcase(lbstresu) as toxunit  from _labtox020
       order by toxlbtestcd,toxunit;
       create table _labtox04 as
       select distinct lbtestcd,upcase(lbstresu) as unit,lbtest from _inds;
@@ -129,7 +120,7 @@
         if lowcase(_rangeg{i}) not in ('na','not available') and not missing(_rangeg{i}) then do;
           %fdolst(vars    =1 2,
                   vars2   =,
-                  stmt    =%nrstr( l&item=lowcase(scan(compress(_rangeg{i}),&item,'-–'));
+                  stmt    =%nrstr( l&item=lowcase(scan(compress(_rangeg{i}),&item,'-ï¿½'));
                                    if not missing(l&item ) then do;
                                     o&item=ifc((substr(l&item,1,1) in ('<','>')),substr(l&item,1,1),'');
                                     factor=ifc(index(l&item,'xlln'),cats('/ round(lbstnrlo,',put(round,best.),')'),'');
@@ -237,7 +228,7 @@
         if lowcase(_rangeg{i}) not in ('na','not available') and not missing(_rangeg{i}) then do;
           %fdolst(vars    =1 2,
                   vars2   =,
-                  stmt    =%nrstr( l&item=lowcase(scan(compress(_rangeg{i}),&item,'-–'));
+                  stmt    =%nrstr( l&item=lowcase(scan(compress(_rangeg{i}),&item,'-ï¿½'));
                                    if not missing(l&item ) then do;
                                     o&item=ifc((substr(l&item,1,1) in ('<','>')),substr(l&item,1,1),'');
                                     factor=ifc(index(l&item,'xlln'),'/ lbstnrlo','');
