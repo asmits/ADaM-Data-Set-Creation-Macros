@@ -39,7 +39,7 @@
            _labtox040 (in=inds);
      by name;
      if tox and not inds 
-      then put "USER WARNING: Variable " name " is missing in the input dataset &inds, "
+      then put "USER WAR' 'NING: Variable " name " is missing in the input dataset &inds, "
                                   /"=> " name " is a conditional/context variable for the toxicity scaling";
    run;
 
