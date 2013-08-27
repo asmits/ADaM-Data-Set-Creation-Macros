@@ -88,7 +88,6 @@
       proc sort; by &toxvars;
    run;
 
-   options nomprint;
    data _labtox03;
       set _labtox02 ;
       by &toxvars notsorted;
