@@ -70,7 +70,7 @@
       found = max(found,ifn(toxunit=unit or missing(toxunit) or toxunit="ULN",1,0));
       if last.toxlbtestcd and not found then do;
        output _labtoxwrongunit;
-       put 'WARNING: Test ' lbtestcd ' not in data with same unit as in grading scale table eg. ' unit ' vs ' toxunit;
+       put 'USER WAR' 'NING: Test ' lbtestcd ' not in data with same unit as in grading scale table eg. ' unit ' vs ' toxunit;
       end;
       else if last.toxlbtestcd and found then output _labtox06;
    run;
