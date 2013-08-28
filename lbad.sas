@@ -45,19 +45,19 @@
 
    proc sql noprint;
       create table _labtox050 as
-      select distinct lbtestcd as toxlbtestcd,upcase(lbstresu) as toxunit  from _labtox020
-      order by toxlbtestcd,toxunit;
+        select distinct lbtestcd as toxlbtestcd,upcase(lbstresu) as toxunit  from _labtox020
+        order by toxlbtestcd,toxunit;
       create table _labtox060 as
-      select distinct lbtestcd,upcase(lbstresu) as unit,lbtest from _inds;
+        select distinct lbtestcd,upcase(lbstresu) as unit,lbtest from _inds;
       create table _labtox070 as
-      select *
-      from _labtox060 a full join _labtox050 b on
-      a.lbtestcd = b.toxlbtestcd
-      order by toxlbtestcd,toxunit;
-      select name into :toxvars         separated by " "   from _labtox030 order by varnum;
+        select *
+        from _labtox060 a full join _labtox050 b on
+        a.lbtestcd = b.toxlbtestcd
+        order by toxlbtestcd,toxunit;
+      select name into :toxvars         separated by " "   from _labtox030 
+        order by varnum;
       select name into :toxvars_notoxnm separated by " "   from _labtox030 (where=(lowcase(name) not in ('lbtoxnm') ))
-      order by varnum;
-
+        order by varnum;
    quit;
  *----   * check units (original or standard units) ----*;
 
